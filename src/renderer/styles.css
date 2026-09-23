@@ -1,0 +1,231 @@
+/* The capsule. Two jobs: look like a piece of the desktop, and stay readable at
+   a glance. No DSH tokens here — the app owns its palette and follows the
+   Windows light/dark setting, which the main process reports on `bar:state`. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+body {
+  font: 12px/1.4 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: var(--fg);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+:root[data-theme='dark'] {
+  --bg: rgba(28, 29, 33, 0.94);
+  --fg: #eceef3;
+  --muted: #9aa3b2;
+  --subtle: #8b93a1;
+  --border: rgba(255, 255, 255, 0.1);
+  --hover: rgba(255, 255, 255, 0.1);
+  --accent: #6f8dff;
+  --accent-soft: rgba(111, 141, 255, 0.22);
+  --warn: #e0a92e;
+  --hot: #f2686d;
+  --ok: #3fb950;
+}
+
+:root[data-theme='light'] {
+  --bg: rgba(252, 252, 254, 0.94);
+  --fg: #1b1d22;
+  --muted: #5f6673;
+  --subtle: #6b7280;
+  --border: rgba(0, 0, 0, 0.12);
+  --hover: rgba(0, 0, 0, 0.07);
+  --accent: #3b5bdb;
+  --accent-soft: rgba(59, 91, 219, 0.16);
+  --warn: #a1700b;
+  --hot: #c02a2f;
+  --ok: #1a7f37;
+}
+
+.dsm-tile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Floating, the capsule hugs its text and the window is sized to match, so the
+     measured width never depends on the window. Docked, it stretches instead. */
+  width: max-content;
+  padding: 5px 8px 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  /* The bar is the drag handle; the buttons opt out below. */
+  -webkit-app-region: drag;
+}
+
+/* Docked to the top edge: flush top, rounded bottom — it reads as a piece of the
+   screen edge rather than a floating chip. */
+.dsm-tile[data-pinned='1'] {
+  /* Docked, the window spans the work area, so the bar fills it and the buttons
+     ride at the far right. The renderer stops reporting its width in this mode
+     (see main/index.js) — the width here is the screen's, not the content's. */
+  width: 100%;
+  border-radius: 0 0 12px 12px;
+  border-top: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  -webkit-app-region: no-drag;
+}
+
+.dsm-grip {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: -1px;
+  opacity: 0.75;
+}
+
+.dsm-items {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dsm-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.dsm-label {
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.dsm-value {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.dsm-value.dsm-warn {
+  color: var(--warn);
+}
+
+.dsm-value.dsm-hot {
+  color: var(--hot);
+}
+
+.dsm-value.dsm-unknown {
+  color: var(--subtle);
+  font-weight: 400;
+}
+
+.dsm-detail {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.dsm-detail.dsm-warn {
+  color: var(--warn);
+}
+
+.dsm-detail.dsm-hot {
+  color: var(--hot);
+}
+
+.dsm-sep {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  opacity: 0.55;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.dsm-note {
+  color: var(--subtle);
+  font-size: 11px;
+}
+
+.dsm-status {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.dsm-status[data-status='error'] {
+  background: var(--hot);
+}
+
+.dsm-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  /* Pinned, the bar spans the screen, so the buttons stay at the far right. */
+  margin-left: auto;
+}
+
+.dsm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.dsm-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+/* The pin shows its state twice over — tinted and pressed in — because it is the
+   only control whose effect is not immediate on screen. */
+.dsm-btn[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.dsm-btn[aria-pressed='true']:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.dsm-btn[data-spin='1'] svg {
+  animation: dsm-spin 0.9s linear infinite;
+}
+
+@keyframes dsm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dsm-btn[data-spin='1'] svg {
+    animation: none;
+  }
+}

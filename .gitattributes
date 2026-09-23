@@ -1,0 +1,12 @@
+# Store every text file with LF and check it out with LF, so a Windows
+# contributor's working copy cannot rewrite the whole repo on the first commit.
+* text=auto eol=lf
+
+# Generated icons and screenshots are binary; never line-ending-convert them.
+*.png binary
+*.ico binary
+*.jpg binary
+*.webp binary
+
+# Keep the lockfile diffable.
+package-lock.json text eol=lf

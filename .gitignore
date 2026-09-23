@@ -1,0 +1,18 @@
+# Installed dependencies (electron, the packager) are dev-only; the app itself
+# ships with no runtime dependencies.
+node_modules/
+
+# Packaging output and the self-capture diagnostic.
+dist/
+capture/
+
+# Local npm cache used when the default cache directory is not writable.
+.npm-cache/
+
+# Commit-message and ad-hoc scratch files — `git add -A` before composing a
+# commit message otherwise picks these up.
+_*
+
+# OS noise
+.DS_Store
+Thumbs.db

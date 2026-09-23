@@ -1,0 +1,12 @@
+{
+  "metrics/parse.js": "5ca90d4c6276e403ce2b2a0381aae5ad878666ec17c73f75817f0ec6c56ec7fb",
+  "metrics/exec.js": "56ecc7920e4353c5f2f8da68e379151aa91c8d30f67944c9aab1cbf8d0f2da00",
+  "metrics/cpu.js": "471eddc7981d7e2d7a47cb46f2f51c2176a267efe0fbacfe2ad3fff83de9f3be",
+  "metrics/memory.js": "bbf5c1a544f75defeefc72f44c827a0aa1e125ee5922be26f3e768deafed9b50",
+  "metrics/cputemp.js": "1372fef98bfd839173a8e54e03f42474c19961541f0270bf45d58dbce72bd622",
+  "metrics/gpu.js": "6cb9cfd25b3ce54e001e5ffb8229d1a4e795041e992d5d9928a9d656f3494be5",
+  "metrics/network.js": "de5a7a95603076289a704e121944058df8ead8b6a276bf21ca2910f1a7504136",
+  "metrics/monitor.js": "2cd07192a99df37f2fc1ceee940636c29270e525cc9bf1ce8c0f57097f9364c5",
+  "model.js": "109f3d632113815901f6a06307670055cfc09b1973dac513f5f6c688843bd779",
+  "locales.js": "e02a0fd24fb8c0571b363b3f835cd077977b648020803748fcf6bbb180eb5eff"
+}

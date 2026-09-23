@@ -7,6 +7,11 @@
  * uninstaller, no registry entries.
  *
  *   npm run icons && npm run dist
+ *
+ * That zip comes from github.com via `@electron/get`. Where github.com is
+ * unreachable, point it at a mirror instead of giving up:
+ *
+ *   ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run dist
  */
 import { packager } from '@electron/packager'
 import { readFile, stat } from 'node:fs/promises'

@@ -24,7 +24,8 @@ body {
 }
 
 :root[data-theme='dark'] {
-  --bg: rgba(28, 29, 33, 0.94);
+  --bg-rgb: 28 29 33;
+  --bg-alpha: 0.94;
   --fg: #eceef3;
   --muted: #9aa3b2;
   --subtle: #8b93a1;
@@ -38,7 +39,8 @@ body {
 }
 
 :root[data-theme='light'] {
-  --bg: rgba(252, 252, 254, 0.94);
+  --bg-rgb: 252 252 254;
+  --bg-alpha: 0.94;
   --fg: #1b1d22;
   --muted: #5f6673;
   --subtle: #6b7280;
@@ -55,13 +57,16 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  /* Floating, the capsule hugs its text and the window is sized to match, so the
-     measured width never depends on the window. Docked, it stretches instead. */
+  /* The capsule always hugs its text. Docked it is the same size as floating —
+     the window is sized to match — so the measured width never depends on the
+     window and there is no measurement feedback loop. */
   width: max-content;
   padding: 5px 8px 5px 10px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--bg);
+  /* Only the tint is transparent; the text below stays fully opaque, which is
+     what keeps a low opacity readable. */
+  background: rgb(var(--bg-rgb) / var(--bg-alpha));
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
@@ -72,16 +77,25 @@ body {
 }
 
 /* Docked to the top edge: flush top, rounded bottom — it reads as a piece of the
-   screen edge rather than a floating chip. */
+   screen edge rather than a floating chip. It keeps its own width and is centred
+   by the main process, so it is never stretched across the screen. */
 .dsm-tile[data-pinned='1'] {
-  /* Docked, the window spans the work area, so the bar fills it and the buttons
-     ride at the far right. The renderer stops reporting its width in this mode
-     (see main/index.js) — the width here is the screen's, not the content's. */
-  width: 100%;
   border-radius: 0 0 12px 12px;
   border-top: 0;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  /* Docked, the edge decides where the bar is, so dragging it means nothing. */
   -webkit-app-region: no-drag;
+}
+
+/* Click-through: the bar receives nothing, so it must not *look* interactive —
+   hover highlights on buttons that cannot be pressed are the thing that makes
+   click-through read as broken. */
+body[data-click-through='1'] .dsm-btn {
+  opacity: 0.45;
+}
+
+body[data-click-through='1'] .dsm-tile {
+  border-style: dashed;
 }
 
 .dsm-grip {
@@ -176,8 +190,6 @@ body {
   align-items: center;
   gap: 2px;
   flex: 0 0 auto;
-  /* Pinned, the bar spans the screen, so the buttons stay at the far right. */
-  margin-left: auto;
 }
 
 .dsm-btn {

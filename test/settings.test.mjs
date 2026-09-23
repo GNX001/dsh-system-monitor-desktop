@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { DEFAULT_SETTINGS, normalizePoint, normalizeSettings } from '../src/main/settings.js'
+import { DEFAULT_SETTINGS, MAX_OPACITY, MIN_OPACITY, THEMES, normalizeOpacity, normalizePoint, normalizeSettings } from '../src/main/settings.js'
 import { readJson, writeJson } from '../src/main/store.js'
 import { APP_STRINGS, resolveLanguage, stringsFor } from '../src/shared/strings.js'
 
@@ -38,6 +38,35 @@ test('normalizeSettings rejects an unusable position and language', () => {
   assert.deepEqual(normalizePoint({ x: 0, y: 0 }), { x: 0, y: 0 }, 'the origin is a real position')
   assert.equal(normalizeSettings({ language: 'de' }).language, 'auto')
   assert.equal(normalizeSettings({ language: 'ZH' }).language, 'auto', 'the codes are exact')
+})
+
+test('normalizeSettings validates the theme, the opacity and the startup flag', () => {
+  assert.deepEqual(THEMES, ['auto', 'light', 'dark'])
+  assert.equal(normalizeSettings({ theme: 'dark' }).theme, 'dark')
+  assert.equal(normalizeSettings({ theme: 'light' }).theme, 'light')
+  assert.equal(normalizeSettings({ theme: 'DARK' }).theme, 'auto', 'the values are exact')
+  assert.equal(normalizeSettings({ theme: 'sepia' }).theme, 'auto')
+
+  assert.equal(normalizeSettings({ opacity: 0.5 }).opacity, 0.5)
+  assert.equal(normalizeSettings({ opacity: 1 }).opacity, MAX_OPACITY)
+  assert.equal(normalizeSettings({ opacity: 'clear' }).opacity, DEFAULT_SETTINGS.opacity)
+  assert.equal(normalizeSettings({ opacity: null }).opacity, DEFAULT_SETTINGS.opacity)
+
+  assert.equal(normalizeSettings({ openAtLogin: true }).openAtLogin, true)
+  assert.equal(normalizeSettings({ openAtLogin: false }).openAtLogin, false)
+  assert.equal(normalizeSettings({ openAtLogin: 'yes' }).openAtLogin, false, 'a non-boolean keeps the default')
+})
+
+test('an out-of-range opacity is clamped into the usable range', () => {
+  // The floor is deliberate: a fully transparent capsule would leave the text
+  // floating over whatever is behind it.
+  assert.equal(normalizeOpacity(0), MIN_OPACITY)
+  assert.equal(normalizeOpacity(-3), MIN_OPACITY)
+  assert.equal(normalizeOpacity(5), MAX_OPACITY)
+  assert.equal(normalizeOpacity(0.5678), 0.57, 'stored at 1% resolution, matching the slider')
+  assert.equal(normalizeOpacity(0.999), 1)
+  assert.equal(normalizeOpacity(Number.NaN, 0.7), 0.7)
+  assert.ok(MIN_OPACITY > 0, 'never fully transparent')
 })
 
 test('a corrupt settings file degrades to the defaults instead of throwing', async () => {

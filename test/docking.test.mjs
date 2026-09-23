@@ -7,6 +7,7 @@ import {
   clampFloatingPosition,
   defaultFloatingPosition,
   dockedBounds,
+  dockedX,
   initialDockState,
   isCursorOverBar,
   reduceDockState,
@@ -14,49 +15,74 @@ import {
 } from '../src/main/docking.js'
 
 const WORK_AREA = { x: 0, y: 0, width: 1920, height: 1040 }
-const BAR_HEIGHT = 34
+/** The capsule's own size — narrower than the work area, which is the point. */
+const BAR = { width: 900, height: 34 }
+/** Centre of the docked bar, for cursor tests. */
+const BAR_MID = dockedX(WORK_AREA, BAR.width) + Math.round(BAR.width / 2)
 
-test('docked bounds span the work area and leave a sliver when hidden', () => {
-  const expanded = dockedBounds(WORK_AREA, BAR_HEIGHT, true)
-  assert.deepEqual(expanded, { x: 0, y: 0, width: 1920, height: BAR_HEIGHT })
+test('docked bounds keep the bar its own width, centred on the top edge', () => {
+  const expanded = dockedBounds(WORK_AREA, BAR, true)
+  assert.deepEqual(expanded, { x: 510, y: 0, width: 900, height: 34 })
+  assert.notEqual(expanded.width, WORK_AREA.width, 'the bar is never stretched to the screen')
 
-  const hidden = dockedBounds(WORK_AREA, BAR_HEIGHT, false)
-  assert.equal(hidden.x, 0)
-  assert.equal(hidden.width, 1920)
+  const hidden = dockedBounds(WORK_AREA, BAR, false)
+  assert.equal(hidden.x, 510, 'hiding does not move it sideways')
+  assert.equal(hidden.width, 900, 'nor change its width')
   // Only PEEK_PX rows of the bar stay on screen.
   assert.equal(hidden.y + hidden.height, PEEK_PX, 'the visible part is exactly the peek')
-  assert.equal(hidden.y, -(BAR_HEIGHT - PEEK_PX))
+  assert.equal(hidden.y, -(BAR.height - PEEK_PX))
+})
+
+test('a bar wider than its work area starts at the left edge instead of going negative', () => {
+  const wide = { width: 3000, height: 34 }
+  assert.equal(dockedX(WORK_AREA, wide.width), WORK_AREA.x)
+  assert.equal(dockedBounds(WORK_AREA, wide, true).x, 0)
 })
 
 test('docked bounds respect a work area that is not at the origin', () => {
   // A second monitor to the left, with the taskbar on the primary.
   const secondary = { x: -1920, y: 40, width: 1920, height: 1000 }
-  assert.deepEqual(dockedBounds(secondary, 30, true), { x: -1920, y: 40, width: 1920, height: 30 })
-  assert.equal(dockedBounds(secondary, 30, false).y, 40 - (30 - PEEK_PX))
+  const bar = { width: 900, height: 30 }
+  assert.deepEqual(dockedBounds(secondary, bar, true), { x: -1410, y: 40, width: 900, height: 30 })
+  assert.equal(dockedBounds(secondary, bar, false).y, 40 - (30 - PEEK_PX))
 })
 
 test('a hidden bar is grabbed at the top edge, an open one anywhere on it', () => {
   // Hidden: only the sliver (plus slack) counts.
-  assert.equal(isCursorOverBar({ x: 900, y: 0 }, WORK_AREA, BAR_HEIGHT, false), true)
-  assert.equal(isCursorOverBar({ x: 900, y: PEEK_PX - 1 }, WORK_AREA, BAR_HEIGHT, false), true)
-  assert.equal(isCursorOverBar({ x: 900, y: PEEK_PX + GRAB_SLACK_PX }, WORK_AREA, BAR_HEIGHT, false), false)
-  assert.equal(isCursorOverBar({ x: 900, y: 200 }, WORK_AREA, BAR_HEIGHT, false), false)
+  assert.equal(isCursorOverBar({ x: BAR_MID, y: 0 }, WORK_AREA, BAR, false), true)
+  assert.equal(isCursorOverBar({ x: BAR_MID, y: PEEK_PX - 1 }, WORK_AREA, BAR, false), true)
+  assert.equal(isCursorOverBar({ x: BAR_MID, y: PEEK_PX + GRAB_SLACK_PX }, WORK_AREA, BAR, false), false)
+  assert.equal(isCursorOverBar({ x: BAR_MID, y: 200 }, WORK_AREA, BAR, false), false)
 
   // Open: the whole bar keeps it open, so using it does not make it vanish.
-  assert.equal(isCursorOverBar({ x: 900, y: 20 }, WORK_AREA, BAR_HEIGHT, true), true)
-  assert.equal(isCursorOverBar({ x: 900, y: BAR_HEIGHT + 1 }, WORK_AREA, BAR_HEIGHT, true), false)
+  assert.equal(isCursorOverBar({ x: BAR_MID, y: 20 }, WORK_AREA, BAR, true), true)
+  assert.equal(isCursorOverBar({ x: BAR_MID, y: BAR.height + 1 }, WORK_AREA, BAR, true), false)
 
-  // Outside the bar horizontally (another monitor, or beside a narrower bar).
-  assert.equal(isCursorOverBar({ x: 3000, y: 0 }, WORK_AREA, BAR_HEIGHT, false), false)
-  assert.equal(isCursorOverBar(null, WORK_AREA, BAR_HEIGHT, false), false)
+  assert.equal(isCursorOverBar(null, WORK_AREA, BAR, false), false)
+})
+
+test('a bar that keeps its width is only grabbed where it actually is', () => {
+  // The screen edge is not the bar: the top-left corner is somebody else's.
+  assert.equal(isCursorOverBar({ x: WORK_AREA.x, y: 0 }, WORK_AREA, BAR, false), false)
+  assert.equal(isCursorOverBar({ x: 200, y: 0 }, WORK_AREA, BAR, false), false)
+  assert.equal(isCursorOverBar({ x: 3000, y: 0 }, WORK_AREA, BAR, false), false)
+
+  // Its real edges do count, with GRAB_SLACK_PX of forgiveness each side.
+  const left = dockedX(WORK_AREA, BAR.width)
+  const right = left + BAR.width
+  assert.equal(isCursorOverBar({ x: left, y: 0 }, WORK_AREA, BAR, false), true)
+  assert.equal(isCursorOverBar({ x: left - GRAB_SLACK_PX, y: 0 }, WORK_AREA, BAR, false), true)
+  assert.equal(isCursorOverBar({ x: left - GRAB_SLACK_PX - 1, y: 0 }, WORK_AREA, BAR, false), false)
+  assert.equal(isCursorOverBar({ x: right - 1, y: 0 }, WORK_AREA, BAR, false), true)
+  assert.equal(isCursorOverBar({ x: right + GRAB_SLACK_PX, y: 0 }, WORK_AREA, BAR, false), false)
 })
 
 test('the pointer reaching the top edge reveals the bar immediately', () => {
   const state = { expanded: false, lastOverAt: 0 }
   const next = reduceDockState(state, {
-    cursor: { x: 100, y: 1 },
+    cursor: { x: BAR_MID, y: 1 },
     workArea: WORK_AREA,
-    barHeight: BAR_HEIGHT,
+    bar: BAR,
     now: 10_000,
     pinned: true,
   })
@@ -66,7 +92,7 @@ test('the pointer reaching the top edge reveals the bar immediately', () => {
 
 test('hiding waits out the delay so brushing past the edge does not flap', () => {
   const open = { expanded: true, lastOverAt: 10_000 }
-  const away = { cursor: { x: 100, y: 900 }, workArea: WORK_AREA, barHeight: BAR_HEIGHT, pinned: true }
+  const away = { cursor: { x: BAR_MID, y: 900 }, workArea: WORK_AREA, bar: BAR, pinned: true }
 
   const tooEarly = reduceDockState(open, { ...away, now: 10_000 + COLLAPSE_DELAY_MS - 1 })
   assert.equal(tooEarly, open, 'nothing changes before the delay elapses')
@@ -81,7 +107,7 @@ test('an unpinned bar is always expanded and ignores the cursor', () => {
   const next = reduceDockState(collapsed, {
     cursor: { x: 0, y: 900 },
     workArea: WORK_AREA,
-    barHeight: BAR_HEIGHT,
+    bar: BAR,
     now: 5_000,
     pinned: false,
   })
@@ -89,7 +115,7 @@ test('an unpinned bar is always expanded and ignores the cursor', () => {
 
   const already = initialDockState(1_000)
   assert.equal(
-    reduceDockState(already, { cursor: null, workArea: WORK_AREA, barHeight: BAR_HEIGHT, now: 9_000, pinned: false }),
+    reduceDockState(already, { cursor: null, workArea: WORK_AREA, bar: BAR, now: 9_000, pinned: false }),
     already,
     'a steady state returns the identical object, so the caller can skip the redraw'
   )
@@ -98,9 +124,9 @@ test('an unpinned bar is always expanded and ignores the cursor', () => {
 test('an open bar stays open while the pointer is on it', () => {
   const open = { expanded: true, lastOverAt: 1_000 }
   const next = reduceDockState(open, {
-    cursor: { x: 10, y: 5 },
+    cursor: { x: BAR_MID, y: 5 },
     workArea: WORK_AREA,
-    barHeight: BAR_HEIGHT,
+    bar: BAR,
     now: 1_000 + COLLAPSE_DELAY_MS * 5,
     pinned: true,
   })

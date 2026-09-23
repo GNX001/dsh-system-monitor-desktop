@@ -1,6 +1,6 @@
 {
   "name": "dsh-system-monitor-desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DeepSeek Harness 系统监视器的 Windows 独立桌面版：吸顶自动收缩的置顶状态条，支持点击穿透。Windows desktop build of the DeepSeek Harness system monitor: an always-on-top status bar that docks to the top edge and auto-hides, with click-through.",
   "private": true,
   "type": "module",
@@ -12,7 +12,10 @@
     "test": "node --test \"test/*.test.mjs\"",
     "icons": "node tools/make-icons.mjs",
     "dist": "node tools/pack.mjs",
-    "capture": "electron . --capture"
+    "capture": "electron . --capture",
+    "probe": "electron . --probe",
+    "drag": "electron . --drag",
+    "login-test": "electron . --login-test"
   },
   "devDependencies": {
     "@electron/packager": "18.3.6",

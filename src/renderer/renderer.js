@@ -21,6 +21,7 @@ const api = window.barApi
 const bar = document.getElementById('bar')
 const items = document.getElementById('items')
 const statusDot = document.getElementById('status')
+const settingsButton = document.getElementById('settings')
 const refreshButton = document.getElementById('refresh')
 const pinButton = document.getElementById('pin')
 const closeButton = document.getElementById('close')
@@ -30,7 +31,7 @@ const DICTIONARIES = { zh, en }
 let language = resolveLanguage('auto', navigator.language)
 let t = bindDictionary(DICTIONARIES[language])
 let ui = stringsFor(language)
-let state = { pinned: false, expanded: true, clickThrough: false, alwaysOnTop: true, dark: null }
+let state = { pinned: false, expanded: true, clickThrough: false, alwaysOnTop: true, dark: null, theme: 'auto', opacity: 0.94 }
 let latest = null
 let refreshing = false
 
@@ -40,10 +41,13 @@ function applyLanguage() {
   ui = stringsFor(language)
   refreshButton.title = t('refresh')
   refreshButton.setAttribute('aria-label', t('refresh'))
+  settingsButton.title = ui.settingsLabel
+  settingsButton.setAttribute('aria-label', ui.settingsLabel)
   closeButton.title = ui.hide
   closeButton.setAttribute('aria-label', ui.hide)
   pinButton.title = state.pinned ? ui.pinOn : ui.pinOff
   pinButton.setAttribute('aria-label', ui.pinLabel)
+  bar.title = state.clickThrough ? ui.clickThroughOn : state.pinned ? ui.dockedHint : ''
   render()
 }
 
@@ -110,8 +114,17 @@ function setState(next) {
     language = next.language
     applyLanguage()
   }
+  // `dark` is already resolved by the main process: for theme 'auto' it follows
+  // the OS, otherwise it is what the user picked.
   document.documentElement.dataset.theme = state.dark === false ? 'light' : 'dark'
+  // Only the tint fades; the palette above stays fully opaque.
+  const opacity = typeof state.opacity === 'number' ? state.opacity : 0.94
+  document.documentElement.style.setProperty('--bg-alpha', String(opacity))
+  // Click-through makes the buttons unreachable, so the styling has to say so
+  // rather than light up under a pointer that cannot press anything.
+  document.body.dataset.clickThrough = state.clickThrough ? '1' : '0'
   bar.dataset.pinned = state.pinned ? '1' : '0'
+  bar.title = state.clickThrough ? ui.clickThroughOn : state.pinned ? ui.dockedHint : ''
   pinButton.setAttribute('aria-pressed', state.pinned ? 'true' : 'false')
   pinButton.title = state.pinned ? ui.pinOn : ui.pinOff
 }
@@ -132,6 +145,10 @@ refreshButton.addEventListener('click', async () => {
     refreshing = false
     refreshButton.dataset.spin = '0'
   }
+})
+
+settingsButton.addEventListener('click', () => {
+  void api.openSettings()
 })
 
 pinButton.addEventListener('click', async () => {
@@ -169,6 +186,17 @@ const observer = new ResizeObserver((entries) => {
   api.reportSize({ width, height })
 })
 observer.observe(bar)
+
+// Count real mouse presses on the window.
+//
+// Main reads this in `--probe` mode to answer a question nothing else can: when
+// click-through is on, did a synthetic click at the bar's own coordinates reach
+// the bar or pass through it? A counter on the window is the ground truth, and
+// it needs no IPC channel — main just evaluates this expression.
+window.__dsmClicks = 0
+window.addEventListener('mousedown', () => {
+  window.__dsmClicks += 1
+}, true)
 
 // Paint the system theme before the main process answers, so there is no flash.
 document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'

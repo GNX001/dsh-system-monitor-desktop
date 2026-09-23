@@ -1,0 +1,30 @@
+<!doctype html>
+<html data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:"
+    />
+    <title>Settings</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <!-- The controls are built and kept in sync by settings.js, so that every
+         label comes from the shared dictionary and nothing is written twice. -->
+    <header class="head">
+      <h1 id="heading"></h1>
+      <p id="intro" class="lede"></p>
+    </header>
+
+    <div id="warning" class="warning" hidden></div>
+
+    <main id="form" class="form"></main>
+
+    <footer class="foot">
+      <span id="footnote" class="footnote"></span>
+    </footer>
+
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>

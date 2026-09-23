@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('barApi', {
   refresh: () => ipcRenderer.invoke('bar:refresh'),
   hide: () => ipcRenderer.invoke('bar:hide'),
   quit: () => ipcRenderer.invoke('bar:quit'),
+  openSettings: () => ipcRenderer.invoke('settings:open'),
   reportSize: (size) => ipcRenderer.send('bar:size', size),
   onSnapshot: (handler) => subscribe('metrics:snapshot', handler),
   onState: (handler) => subscribe('bar:state', handler),

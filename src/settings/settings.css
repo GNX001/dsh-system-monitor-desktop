@@ -1,0 +1,290 @@
+/* Settings window.
+   Follows the app's own theme setting (light/dark palettes below), so the window
+   matches the bar it configures rather than only the OS. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font: 13px/1.5 ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  user-select: none;
+  -webkit-user-select: none;
+  overflow-y: auto;
+}
+
+:root[data-theme='dark'] {
+  --bg: #1c1d21;
+  --card: #26272c;
+  --fg: #eceef3;
+  --muted: #9aa3b2;
+  --border: rgba(255, 255, 255, 0.09);
+  --hover: rgba(255, 255, 255, 0.06);
+  --accent: #6f8dff;
+  --accent-soft: rgba(111, 141, 255, 0.18);
+  --warn: #e0a92e;
+  --warn-soft: rgba(224, 169, 46, 0.12);
+}
+
+:root[data-theme='light'] {
+  --bg: #f6f7fa;
+  --card: #ffffff;
+  --fg: #1b1d22;
+  --muted: #5f6673;
+  --border: rgba(0, 0, 0, 0.1);
+  --hover: rgba(0, 0, 0, 0.04);
+  --accent: #3b5bdb;
+  --accent-soft: rgba(59, 91, 219, 0.12);
+  --warn: #8a5a00;
+  --warn-soft: rgba(224, 169, 46, 0.16);
+}
+
+.head {
+  padding: 18px 20px 6px;
+}
+
+.head h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.lede {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.warning {
+  margin: 12px 20px 0;
+  padding: 9px 11px;
+  border: 1px solid var(--warn);
+  border-radius: 8px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.form {
+  padding: 14px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.section > h2 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 11px 13px;
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.row-label {
+  display: block;
+  font-weight: 600;
+}
+
+.row-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.row-control {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Switch: a checkbox styled as a track, with the text label to the left. */
+.switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+}
+
+.switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.switch .track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--hover);
+  border: 1px solid var(--border);
+  transition: background 0.14s ease;
+  pointer-events: none;
+}
+
+.switch .track::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 15px;
+  height: 15px;
+  margin-top: -7.5px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.14s ease, background 0.14s ease;
+}
+
+.switch input:checked + .track {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.switch input:checked + .track::after {
+  transform: translateX(16px);
+  background: var(--accent);
+}
+
+.switch input:focus-visible + .track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Segmented choice (theme, language). */
+.segments {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--hover);
+}
+
+.segments label {
+  position: relative;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segments input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segments input:checked + span {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.segments label:has(input:checked) {
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.segments label:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Opacity slider. */
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.slider input[type='range'] {
+  width: 150px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.slider output {
+  min-width: 38px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.button {
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--hover);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.button.danger {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.value {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 5px 0;
+}
+
+.foot {
+  padding: 0 20px 18px;
+}
+
+.footnote {
+  color: var(--muted);
+  font-size: 11.5px;
+}
